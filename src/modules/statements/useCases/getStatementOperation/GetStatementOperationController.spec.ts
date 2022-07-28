@@ -7,7 +7,7 @@ import { app } from "../../../../app";
 
 let connection: Connection;
 
-describe("Show User Profile", () => {
+describe("Statement Operation", () => {
   beforeAll(async () => {
     connection = await createConnection();
     await connection.runMigrations();
@@ -26,7 +26,32 @@ describe("Show User Profile", () => {
     await connection.close();
   });
 
-  it("should be able to show the user profile", async () => {
+  it("should be able to check a statement operation type", async () => {
+    const responseToken = await request(app).post("/api/v1/sessions").send({
+      email: "admin@admin.com",
+      password: "admin",
+    });
+
+    const { token } = responseToken.body;
+
+    const statementDeposit = await request(app).post("/api/v1/statements/deposit")
+      .send({
+        amount: 250,
+        description: "Testing"
+      }).set({
+        Authorization: `Bearer ${token}`
+      })
+
+    const response = await request(app).get(`/api/v1/statements/${statementDeposit.body.id}`)
+      .send()
+      .set({
+        Authorization: `Bearer ${token}`
+      })
+    expect(response.status).toBe(200);
+    expect(response.body.type).toBe('deposit')
+  })
+
+  it("should not be able to get the statement from a non existent id", async () => {
     const responseToken = await request(app).post("/api/v1/sessions").send({
       email: "admin@admin.com",
       password: "admin",
@@ -35,14 +60,12 @@ describe("Show User Profile", () => {
     const { token } = responseToken.body;
 
     const response = await request(app)
-      .get("/api/v1/profile/")
+      .get(`/api/v1/statements/${uuidV4()}`)
       .send()
       .set({
         Authorization: `Bearer ${token}`,
       });
 
-    expect(response.status).toBe(200);
-    expect(response.body.name).toBe("admin");
-    expect(response.body.email).toBe("admin@admin.com");
-  });
-});
+    expect(response.status).toBe(404);
+  })
+})

@@ -46,7 +46,7 @@ describe("Authenticate user", () => {
       })
       await authenticateUserUseCase.execute({
         email: "user@wrongpassword.com",
-        password: "test"
+        password: "testing"
       })
     }).rejects.toBeInstanceOf(IncorrectEmailOrPasswordError)
   })
